@@ -1,0 +1,18 @@
+A0.2
+etag: W/"9290584e798200fd52d7b44f284c812e6acc3e5a59433fb5d79bc63d9c21b12f"
+
+cache-control: public, max-age=60, s-maxage=60
+
+x-ratelimit-limit: 60                                                                                                              
+x-ratelimit-remaining: 47                                                                                                          
+x-ratelimit-used: 13
+x-ratelimit-resource: core
+x-ratelimit-reset: 1794218280
+
+A1:
+les ressources : 
+    Offres          GET /api/v1/offres
+    Offre           GET api/v1/offres/{id}
+    photo           GET api/v1/offres/{id}/photo
+    reservations    POST api/v1/reservations
+    reservation     GET/PUT/DELETE api/v1/reservations/{id}
