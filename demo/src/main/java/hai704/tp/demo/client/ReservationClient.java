@@ -117,6 +117,9 @@ public class ReservationClient {
 
     private void handleClientError(HttpRequest request, ClientHttpResponse response) {
         try {
+            if (response.getStatusCode().value() == 412) {
+                throw new PreconditionFailedException("ETag périmé");
+            }
             throw new ReservationClientException("Erreur client: " + response.getStatusCode(),
                     response.getStatusCode().value(), response.getStatusText());
         } catch (IOException e) {

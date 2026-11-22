@@ -39,11 +39,15 @@ public class ReservationController {
 
         var result = reservationService.creer(request, idempotencyKey);
 
+        HttpHeaders headers = new HttpHeaders();
+        if (result.reservation().etag() != null) {
+            headers.set("ETag", result.reservation().etag());
+        }
+        headers.setLocation(URI.create("/api/v1/reservations/" + result.reservation().id()));
+
         HttpStatus status = result.isNew() ? HttpStatus.CREATED : HttpStatus.OK;
 
-        return ResponseEntity.status(status)
-                .location(URI.create("/api/v1/reservations/" + result.reservation().id()))
-                .body(result.reservation());
+        return new ResponseEntity<>(result.reservation(), headers, status);
     }
 
     // GET /api/v1/reservations/{id}
@@ -59,7 +63,13 @@ public class ReservationController {
         }
 
         return reservationService.findById(id)
-                .map(ResponseEntity::ok)
+                .map(res -> {
+                    HttpHeaders headers = new HttpHeaders();
+                    if (res.etag() != null) {
+                        headers.set("ETag", res.etag());
+                    }
+                    return new ResponseEntity<>(res, headers, HttpStatus.OK);
+                })
                 .orElseThrow(() -> new ReservationNotFoundException(id));
     }
 
@@ -82,7 +92,13 @@ public class ReservationController {
         }
 
         return reservationService.modifier(id, request, ifMatch)
-                .map(ResponseEntity::ok)
+                .map(res -> {
+                    HttpHeaders headers = new HttpHeaders();
+                    if (res.etag() != null) {
+                        headers.set("ETag", res.etag());
+                    }
+                    return ResponseEntity.ok().headers(headers).body(res);
+                })
                 .orElseThrow(() -> new ReservationNotFoundException(id));
     }
 

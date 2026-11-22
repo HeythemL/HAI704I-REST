@@ -30,5 +30,20 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
             @Param("dateDebut") LocalDate dateDebut,
             @Param("dateFin") LocalDate dateFin);
 
+    @Query("""
+        SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
+        FROM Reservation r
+        WHERE r.offreId = :offreId
+        AND r.id != :excludeId
+        AND r.statut = 'CONFIRMED'
+        AND r.dateFin >= :dateDebut
+        AND r.dateDebut <= :dateFin
+    """)
+    boolean existsOverlappingExcludingId(
+            @Param("offreId") String offreId,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin,
+            @Param("excludeId") String excludeId);
+
     List<Reservation> findByOffreId(String offreId);
 }

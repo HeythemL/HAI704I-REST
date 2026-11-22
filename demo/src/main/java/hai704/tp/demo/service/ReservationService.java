@@ -95,8 +95,8 @@ public class ReservationService {
                 .orElseThrow(() -> new ReservationNotFoundException(id));
 
         // Concurrence optimiste : comparer ETag
-        String currentETag = reservation.computeETag();
-        String providedETag = ifMatch != null ? ifMatch.replace("\"", "") : "";
+        String currentETag = reservation.computeETag().replace("\"", "").trim();
+        String providedETag = ifMatch != null ? ifMatch.replace("\"", "").trim() : "";
         if (!currentETag.equals(providedETag)) {
             throw new OptimisticLockingException("ETag périmé : modification concurrente détectée");
         }
@@ -107,9 +107,11 @@ public class ReservationService {
         }
 
         // Vérifier disponibilité pour nouvelles dates (exclure la réservation courante)
-        boolean conflict = reservationRepository.existsOverlapping(
-                request.offreId(), request.dateDebut(), request.dateFin());
-        // Note: pour une vraie implémentation, il faudrait exclure l'ID courant de la requête
+        boolean conflict = reservationRepository.existsOverlappingExcludingId(
+                request.offreId(), request.dateDebut(), request.dateFin(), id);
+        if (conflict) {
+            throw new ReservationConflictException(request.offreId(), request.dateDebut(), request.dateFin());
+        }
 
         // Appliquer modifications
         reservation.setOffreId(request.offreId());
@@ -158,7 +160,8 @@ public class ReservationService {
                 reservation.getStatut(),
                 reservation.getPrixPaye(),
                 links,
-                isNew
+                isNew,
+                reservation.computeETag()
         );
     }
 }

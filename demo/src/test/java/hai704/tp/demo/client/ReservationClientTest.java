@@ -97,10 +97,24 @@ class ReservationClientTest {
         );
         ReservationResponseDTO created = client.creer(request, "idem-key-test-4");
 
-        // Pour modifier, on a besoin de l'ETag - ici on teste que la structure des liens est correcte
-        // Le vrai test d'intégration avec ETag nécessite de capturer le header de réponse
         assertThat(created._links().get("update")).isNotNull();
         assertThat(created._links().get("update").method()).isEqualTo("PUT");
+        assertThat(created.etag()).isNotNull();
+
+        // Modification avec l'ETag reçu
+        ReservationRequestDTO updatedReq = new ReservationRequestDTO(
+                "H2-1", "Modifié", LocalDate.of(2026, 12, 1), LocalDate.of(2026, 12, 5)
+        );
+        Optional<ReservationResponseDTO> updated = client.modifier(created.id(), updatedReq, created.etag());
+        assertThat(updated).isPresent();
+        assertThat(updated.get().nomClient()).isEqualTo("Modifié");
+
+        // Modification avec un ETag périmé -> PreconditionFailedException (412)
+        ReservationRequestDTO staleReq = new ReservationRequestDTO(
+                "H2-1", "Stale Modifié", LocalDate.of(2026, 12, 1), LocalDate.of(2026, 12, 5)
+        );
+        assertThatThrownBy(() -> client.modifier(created.id(), staleReq, "\"stale-etag-999\""))
+                .isInstanceOf(ReservationClient.PreconditionFailedException.class);
     }
 
     @Test
